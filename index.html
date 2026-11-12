@@ -130,6 +130,10 @@ footer{text-align:center;color:var(--label2);font-size:12px;margin:30px 0 10px;l
 @keyframes flash{0%{opacity:.35}100%{opacity:1}}
 @media(min-width:600px){.tiles{grid-template-columns:repeat(4,1fr)}.tile.wide{grid-column:span 2}}
 
+.tip{background:rgba(0,122,255,.08);border-radius:12px;padding:10px 12px;margin:-4px 0 14px;font-size:14px;line-height:1.55}
+.tip span{display:block;font-size:12px;font-weight:700;color:var(--blue);margin-bottom:2px}
+@media (prefers-color-scheme:dark){.tip{background:rgba(10,132,255,.16)}}
+.ver{text-align:center;color:var(--label3);font-size:11px;margin:4px 0 8px;letter-spacing:.02em}
 .loading{text-align:center;color:var(--label2);padding:40px 0;font-size:14px}
 .errbox{background:var(--card);border-radius:18px;padding:16px 18px;color:var(--orange);font-size:14px;margin-top:14px}
 </style>
@@ -157,6 +161,7 @@ footer{text-align:center;color:var(--label2);font-size:12px;margin:30px 0 10px;l
 
 <div id="brief"><div class="loading">브리핑 불러오는 중…</div></div>
 <footer id="foot"></footer>
+<div class="ver">Brief v1.3 · 2026-11-11</div>
 </div>
 
 <script>
@@ -240,10 +245,12 @@ function statHtml(s){return '<div class="st"><div class="k">'+esc(s.k)+'</div><d
 function cardHtml(c){
   return '<div class="ind'+(c.hot?" hot":"")+'"><div class="top"><div class="ih"><span class="rk">'+esc(c.rk)+'</span><span class="it">'+esc(c.name)+'</span>'+
     (c.badge?'<span class="badge'+(c.alert?" alert":"")+'">'+esc(c.badge)+'</span>':"")+'</div>'+
-    '<div class="stats">'+(c.stats||[]).map(statHtml).join("")+'</div><p class="note">'+esc(c.note)+'</p></div>'+
+    '<div class="stats">'+(c.stats||[]).map(statHtml).join("")+'</div><p class="note">'+esc(c.note)+'</p>'+(c.tip?'<div class="tip"><span>내 포트폴리오엔</span>'+esc(c.tip)+'</div>':'')+'</div>'+
     ((c.links&&c.links.length)?'<div class="links">'+c.links.map(function(l){return '<a href="'+esc(safeUrl(l.u))+'" target="_blank" rel="noopener">'+esc(l.t)+'</a>'}).join("")+'</div>':"")+'</div>';
 }
+var firstRender=true;
 function renderBrief(d){
+  var y=window.scrollY;
   $("#eyebrow").textContent=d.eyebrow||""; $("#title").textContent=d.title||"마켓 브리핑";
   if(!Object.keys(quotes).length&&d.tiles)Object.keys(d.tiles).forEach(function(k){var t=d.tiles[k],el=document.querySelector('[data-q="'+k+'"]');if(!el)return;
     $('[data-f="v"]',el).textContent=t.v;var pe=$('[data-f="p"]',el);pe.textContent=t.p;pe.className="pill num "+(t.c||"flat")});
@@ -258,7 +265,8 @@ function renderBrief(d){
   if(d.calsrc&&d.calsrc.length)h+='<p class="foot">출처 · '+d.calsrc.map(function(l){return '<a href="'+esc(safeUrl(l.u))+'" target="_blank" rel="noopener">'+esc(l.t)+'</a>'}).join(" · ")+'</p>';
   $("#brief").innerHTML=h;
   $("#foot").innerHTML=(d.footer||[]).map(esc).join("<br>");
-  if(location.hash){var t=document.getElementById(location.hash.slice(1));if(t)t.scrollIntoView()}
+  if(!firstRender)window.scrollTo(0,y);
+  firstRender=false;
 }
 function loadBrief(){
   return gviz(GID.brief,"A1").then(function(t){
@@ -273,6 +281,8 @@ try{var c=localStorage.getItem("brief");if(c)renderBrief(JSON.parse(c))}catch(e)
 $("#rng").addEventListener("click",function(ev){var b=ev.target.closest("button");if(!b)return;range=b.getAttribute("data-r");
   Array.prototype.forEach.call(this.children,function(x){x.classList.toggle("on",x===b)});["SP500","TSX"].forEach(drawChart)});
 btn.addEventListener("click",function(){loadLive();loadBrief()});
+$(".seg").addEventListener("click",function(ev){var a=ev.target.closest("a");if(!a)return;ev.preventDefault();var t=document.getElementById(a.getAttribute("href").slice(1));if(t)t.scrollIntoView({behavior:"smooth",block:"start"})});
+if(location.hash)history.replaceState(null,"",location.pathname+location.search);
 loadBrief(); loadLive();
 setInterval(function(){if(!document.hidden)loadLive()},120000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden){loadLive();loadBrief()}});
