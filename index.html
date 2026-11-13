@@ -114,6 +114,7 @@ footer{text-align:center;color:var(--label2);font-size:12px;margin:30px 0 10px;l
 .rng{display:flex;background:var(--npill);border-radius:9px;padding:2px}
 .rng button{font:600 12.5px -apple-system,system-ui,sans-serif;border:0;background:transparent;color:var(--label);padding:5px 11px;border-radius:7px;cursor:pointer}
 .rng button.on{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+#rng{margin:12px 0 0}#rng button{flex:1;padding:6px 0}
 #refresh{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,122,255,.3)}
 #refresh:active{transform:scale(.92)}
 #refresh svg{width:18px;height:18px}
@@ -158,13 +159,13 @@ html,body{overflow-x:hidden}
 
 <div class="livebar">
   <div class="lt"><b><span class="dot" id="ldot"></span>실시간 시세</b><span id="lstat">불러오는 중…</span></div>
-  <div class="rng" id="rng"><button data-r="1D" class="on">1D</button><button data-r="1M">1M</button><button data-r="3M">3M</button></div>
   <button id="refresh" aria-label="새로고침"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
 </div>
+<div class="rng" id="rng"><button data-r="1D" class="on">1D</button><button data-r="1M">1M</button><button data-r="3M">3M</button><button data-r="6M">6M</button><button data-r="YTD">YTD</button><button data-r="1Y">1Y</button><button data-r="5Y">5Y</button></div>
 <div class="tiles">
   <div class="tile wide" data-q="SP500"><div><div class="k">S&amp;P 500</div><div class="v num" data-f="v">—</div><span class="pill flat num" data-f="p">—</span></div><div class="chartbox"><svg class="spark" data-chart="SP500" viewBox="0 0 200 74" preserveAspectRatio="none"></svg><span class="chartcap" data-cap="SP500"></span></div></div>
   <div class="tile wide" data-q="TSX"><div><div class="k">S&amp;P/TSX</div><div class="v num" data-f="v">—</div><span class="pill flat num" data-f="p">—</span></div><div class="chartbox"><svg class="spark" data-chart="TSX" viewBox="0 0 200 74" preserveAspectRatio="none"></svg><span class="chartcap" data-cap="TSX"></span></div></div>
-  <div class="tile" data-q="NASDAQ"><div class="k">나스닥</div><div class="v num" data-f="v">—</div><span class="pill flat num" data-f="p">—</span></div>
+  <div class="tile" data-q="NASDAQ"><div class="k">NASDAQ</div><div class="v num" data-f="v">—</div><span class="pill flat num" data-f="p">—</span></div>
   <div class="tile" data-q="US10Y"><div class="k">미 10년물</div><div class="v num" data-f="v">—</div><span class="pill flat num" data-f="p">—</span></div>
   <div class="tile" data-q="USDCAD"><div class="k">USD/CAD</div><div class="v num" data-f="v">—</div><span class="pill flat num" data-f="p">—</span></div>
   <div class="tile" data-q="VIX"><div class="k">VIX</div><div class="v num" data-f="v">—</div><span class="pill flat num" data-f="p">—</span></div>
@@ -172,13 +173,13 @@ html,body{overflow-x:hidden}
 
 <div id="brief"><div class="loading">브리핑 불러오는 중…</div></div>
 <footer id="foot"></footer>
-<div class="ver">Brief v1.6 · 2026-11-12</div>
+<div class="ver">Brief v1.7 · 2026-11-12</div>
 </div>
 
 <script>
 (function(){
 var SHEET="18evr55HErRUTRGkfoGqtI0QlOAyVTGZzYmLfkCMxsGM", GID={quotes:0,history:1853002022,brief:777,intraday:424242};
-var hist={SP500:[],TSX:[]}, intra={SP500:[],TSX:[]}, quotes={}, range="1D", busy=false;
+var hist={SP500:[],TSX:[]}, histW={SP500:[],TSX:[]}, intra={SP500:[],TSX:[]}, quotes={}, range="1D", busy=false;
 function $(q,r){return (r||document).querySelector(q)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function bold(s){return esc(s).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>")}
@@ -219,8 +220,13 @@ function renderTiles(){
   });
   ["SP500","TSX"].forEach(drawChart);fitAll();
 }
+function iso(t){var m=t.getMonth()+1,d=t.getDate();return t.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(d<10?"0":"")+d}
+function cutoff(r){var t=new Date(),y=t.getFullYear();if(r==="YTD")return y+"-01-01";
+  var R={"1M":[0,1],"3M":[0,3],"6M":[0,6],"1Y":[1,0],"5Y":[5,0]}[r]||[0,1];return iso(new Date(y-R[0],t.getMonth()-R[1],t.getDate()))}
 function series(k,r){
-  var h=hist[k].slice(-((r||range)==="1M"?22:66)), q=quotes[k];
+  r=r||range; var src=r==="5Y"&&histW[k].length?histW[k]:hist[k], cut=cutoff(r), i=0;
+  while(i<src.length&&src[i].d<cut)i++;
+  var h=src.slice(Math.max(0,i-1)), q=quotes[k];
   if(q&&q.price!=null&&h.length){var last=h[h.length-1];
     if(q.date&&q.date>last.d)h.push({d:q.date,c:q.price}); else if(q.date===last.d)h[h.length-1]={d:last.d,c:q.price}}
   return h;
@@ -270,7 +276,7 @@ function drawChart(k){
 }
 function loadLive(){
   if(busy)return; busy=true; btn.classList.add("spin"); setStat("불러오는 중…");
-  Promise.all([gviz(GID.quotes,"A2:F7"),gviz(GID.history,"A2:D90"),gviz(GID.intraday,"A2:F200").catch(function(){return null})]).then(function(r){
+  Promise.all([gviz(GID.quotes,"A2:F7"),gviz(GID.history,"A2:I400"),gviz(GID.intraday,"A2:F200").catch(function(){return null})]).then(function(r){
     if(r[2]&&r[2].rows){var ia={SP500:[],TSX:[]};
       r[2].rows.forEach(function(row){var c=row.c||[];
         [["SP500",0],["TSX",3]].forEach(function(z){var d=cell(c[z[1]]),m=cell(c[z[1]+1]),v=cell(c[z[1]+2]);if(d&&m!=null&&v!=null)ia[z[0]].push({d:+d,m:+m,c:+v})})});
@@ -280,11 +286,13 @@ function loadLive(){
     r[0].rows.forEach(function(row){var c=row.c;var k=cell(c[0]);if(!k)return;
       var ts=String(cell(c[5])||""),tm=/(\d{1,2}):(\d{2})/.exec(ts.slice(10));
       quotes[k]={price:cell(c[2]),chg:cell(c[3]),prev:cell(c[4]),date:ts.slice(0,10),min:tm?(+tm[1])*60+(+tm[2]):null}});
-    var sp=[],tx=[];
+    var sp=[],tx=[],wsp=[],wtx=[];
     r[1].rows.forEach(function(row){var c=row.c;
       if(cell(c[0])&&cell(c[1])!=null)sp.push({d:gdate(cell(c[0])),c:cell(c[1])});
-      if(c[2]&&cell(c[2])&&cell(c[3])!=null)tx.push({d:gdate(cell(c[2])),c:cell(c[3])})});
-    if(sp.length)hist.SP500=sp; if(tx.length)hist.TSX=tx;
+      if(c[2]&&cell(c[2])&&cell(c[3])!=null)tx.push({d:gdate(cell(c[2])),c:cell(c[3])});
+      if(c[5]&&cell(c[5])&&c[6]&&cell(c[6])!=null)wsp.push({d:gdate(cell(c[5])),c:cell(c[6])});
+      if(c[7]&&cell(c[7])&&c[8]&&cell(c[8])!=null)wtx.push({d:gdate(cell(c[7])),c:cell(c[8])})});
+    if(sp.length)hist.SP500=sp; if(tx.length)hist.TSX=tx; if(wsp.length)histW.SP500=wsp; if(wtx.length)histW.TSX=wtx;
     renderTiles();
     setStat(new Date().toLocaleTimeString("ko-KR",{hour:"numeric",minute:"2-digit"})+" 업데이트 · 최대 20분 지연");
   }).catch(function(){setStat("시세를 불러오지 못했어요 · ↻ 를 눌러 다시 시도",true)})
