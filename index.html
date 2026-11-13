@@ -30,7 +30,7 @@ body{margin:0;background:var(--bg);color:var(--label);font:14px/1.45 -apple-syst
 .num{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 
 /* large title */
-.hero{padding:22px 4px 8px}
+.hero{padding:calc(env(safe-area-inset-top,0px) + 34px) 4px 8px}
 .eyebrow{font-size:13px;font-weight:600;color:var(--label2);text-transform:none;letter-spacing:.01em}
 h1{font-size:30px;font-weight:700;letter-spacing:-.025em;margin:2px 0 0;line-height:1.15}
 
@@ -173,7 +173,7 @@ html,body{overflow-x:hidden}
 
 <div id="brief"><div class="loading">브리핑 불러오는 중…</div></div>
 <footer id="foot"></footer>
-<div class="ver">Brief v1.7 · 2026-11-12</div>
+<div class="ver">Brief v1.8 · 2026-11-12</div>
 </div>
 
 <script>
